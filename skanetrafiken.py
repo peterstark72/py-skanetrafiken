@@ -3,7 +3,7 @@
 """
 skanetrafiken.py
 
-Created by Familjen Stark-Wihlney on 2011-08-20.
+Created by Peter Stark.
 Copyright (c) 2011 . All rights reserved.
 """
 
