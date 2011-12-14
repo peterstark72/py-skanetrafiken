@@ -21,7 +21,7 @@ def main():
 	station = skanetrafiken.query_station (query)
 	if station:
 		pprint (station)
-		dep_arr = skanetrafiken.get_departure_arrivals (station)
+		dep_arr = skanetrafiken.get_departure_arrivals (station, name="150")
 		pprint (dep_arr)
 	
 

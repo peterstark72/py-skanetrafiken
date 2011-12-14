@@ -27,8 +27,7 @@ def main():
 	
 	journeys = skanetrafiken.get_journey(station1, station2)	
 	pprint (journeys)
-	
-	
+		
 
 if __name__ == '__main__':
 	main()

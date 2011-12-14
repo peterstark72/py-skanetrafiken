@@ -3,40 +3,54 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>query.py</string>
+	<string>skanetrafiken.py</string>
 	<key>documents</key>
 	<array>
 		<dict>
 			<key>filename</key>
 			<string>journey.py</string>
+			<key>lastUsed</key>
+			<date>2011-12-14T19:39:54Z</date>
 		</dict>
 		<dict>
 			<key>filename</key>
 			<string>query.py</string>
 			<key>lastUsed</key>
-			<date>2011-11-24T13:04:27Z</date>
-			<key>selected</key>
-			<true/>
+			<date>2011-12-14T19:47:33Z</date>
 		</dict>
 		<dict>
 			<key>filename</key>
 			<string>skanetrafiken.py</string>
 			<key>lastUsed</key>
-			<date>2011-11-24T13:04:27Z</date>
+			<date>2011-12-14T19:47:33Z</date>
 		</dict>
 	</array>
 	<key>fileHierarchyDrawerWidth</key>
 	<integer>200</integer>
 	<key>metaData</key>
 	<dict>
+		<key>journey.py</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>1</integer>
+				<key>line</key>
+				<integer>29</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
+		</dict>
 		<key>query.py</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>69</integer>
 				<key>line</key>
-				<integer>0</integer>
+				<integer>23</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -48,24 +62,41 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>25</integer>
 				<key>line</key>
-				<integer>14</integer>
+				<integer>130</integer>
 			</dict>
+			<key>columnSelection</key>
+			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>1</integer>
+			<integer>91</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>7</integer>
+				<key>line</key>
+				<integer>130</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>25</integer>
+				<key>line</key>
+				<integer>130</integer>
+			</dict>
 		</dict>
 	</dict>
 	<key>openDocuments</key>
 	<array>
 		<string>skanetrafiken.py</string>
+		<string>journey.py</string>
 		<string>query.py</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<true/>
 	<key>windowFrame</key>
-	<string>{{418, 78}, {1092, 965}}</string>
+	<string>{{249, 101}, {1092, 965}}</string>
 </dict>
 </plist>

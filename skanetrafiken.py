@@ -21,7 +21,7 @@ stops = [
 		(u"Malmö Studentgatan", u"80116")
 		]
 
-current_time = datetime.datetime.now() + datetime.timedelta(hours=1)
+current_time = datetime.datetime.now(); #+ datetime.timedelta(hours=1)
 
 
 def query_station(inpPointfr):	
@@ -128,7 +128,8 @@ def parse_line (line_node):
 		line['timeuntil'] = - int ((current_time - line['when']).seconds / 60)			
 	line['name'] 				= line_node.findtext('{http://www.etis.fskab.se/v1.0/ETISws}Name')
 	line['towards'] 			= line_node.findtext('{http://www.etis.fskab.se/v1.0/ETISws}Towards')
-	line['deviation']			= line_node.findtext('./{http://www.etis.fskab.se/v1.0/ETISws}RealTime/{http://www.etis.fskab.se/v1.0/ETISws}RealTimeInfo/{http://www.etis.fskab.se/v1.0/ETISws}ArrTimeDeviation')
+	line['dep_time_deviation']			= line_node.findtext('./{http://www.etis.fskab.se/v1.0/ETISws}RealTime/{http://www.etis.fskab.se/v1.0/ETISws}RealTimeInfo/{http://www.etis.fskab.se/v1.0/ETISws}DepTimeDeviation')
+	line['dep_affect']			= line_node.findtext('./{http://www.etis.fskab.se/v1.0/ETISws}RealTime/{http://www.etis.fskab.se/v1.0/ETISws}RealTimeInfo/{http://www.etis.fskab.se/v1.0/ETISws}DepDeviationAffect')
 
 	return line
 
