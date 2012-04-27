@@ -25,6 +25,7 @@ API_URL_TEMPLATE = string.Template('${server}/' + API_VERSION + '/${method}.asp'
 string = lambda s : s.encode('utf-8')
 integer = lambda n : int(n)
 date = lambda d : datetime.datetime.strptime(d,'%Y-%m-%dT%H:%M:%S')
+boolean = lambda b : True if b=='true' else False 
 
 POINT = 'Point', {
 	'Id' : string,
@@ -49,6 +50,22 @@ LINE = 'Line', {
 	'Towards' : string
 }
 
+TRANSPORTMODE = 'TransportMode', {
+	'Id' : integer,
+	'Name' : string,
+	'DefaultChecked' : boolean
+}
+
+JOURNEY = 'Journey' , {
+	'DepDateTime' : date,
+	'ArrDateTime' : date,
+	'NoOfChanges' : integer,
+	'JourneyKey' : string,
+	'Distance' : integer,
+	'CO2value' : string
+}
+
+
 SKANETRAFIKEN_METHODS = {
 	'querystation' : {
 		'required' : ['inpPointFr'],
@@ -66,6 +83,18 @@ SKANETRAFIKEN_METHODS = {
 		'required' : ['selPointFrKey'],
 		'optional' : [],
 		'returns' : LINE,
+		'url_template' : API_URL_TEMPLATE 
+	},
+	'trafficmeans' : {	
+		'required' : [],
+		'optional' : [],
+		'returns' : TRANSPORTMODE,
+		'url_template' : API_URL_TEMPLATE 
+	},
+	'resultspage'  : {	
+		'required' : ['cmdaction','selPointFr', 'selPointTo'],
+		'optional' : ['inpTime','inpDate','LastStart', 'FirstStart','NoOf','transportMode'],
+		'returns' : JOURNEY,
 		'url_template' : API_URL_TEMPLATE 
 	}
 }
@@ -132,9 +161,11 @@ class Skanetrafiken(object):
 
 def main():
 	sk = Skanetrafiken()
-	print sk.querystation(u"Tygelsjö")
+	print sk.querystation(u"Malmö")
 	print sk.stationresults("80421")
 	print sk.neareststation("6158063", "1322703")
+	print sk.trafficmeans()
+	print sk.resultspage("next", u"Malmö C|80000|0", u"landskrona|82000|0")
 	
 
 if __name__ == '__main__':
