@@ -52,7 +52,6 @@ import logging
 import string
 import urllib
 import datetime
-import pprint
 
 from xml.dom import minidom
 
@@ -297,31 +296,7 @@ class Skanetrafiken(object):
 
 
 def main():
-
-	sk = Skanetrafiken()
-	
-	try:
-		pprint.pprint( sk.querypage(u"Malmö", u"Ystad"))
-		
-		resval = sk.resultspage("next", u"Malmö C|80000|1", u"landskrona|82000|0")
-		if (resval[0]['Code'] == 0):
-			cf = resval[0]['JourneyResultKey']
-			pprint.pprint( sk.journeypath(cf,1))
-		
-		#pprint.pprint( sk.querystation(u"Tygelsjö Laavägen"))
-		#pprint.pprint( sk.neareststation(6167930,1323215,1000))
-		#pprint.pprint( sk.stationresults(80000))
-		#pprint.pprint( sk.trafficmeans())
-
-	except SkanetrafikenException as e:
-		print e
-	except Exception as e:
-		print e
-	
-	
-	#print sk.querystation(u"Malmö")
-	
-	
+	pass
 
 if __name__ == '__main__':
 	main()		
