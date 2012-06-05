@@ -66,7 +66,7 @@ API_URL_TEMPLATE = string.Template('${server}/' + API_VERSION + '/${method}.asp'
 
 ERROR_EXCEPTION = string.Template('Error: ${status}.')
 
-string = lambda s : s.encode('utf-8')
+string = lambda s : unicode(s)
 integer = lambda n : int(n)
 date = lambda d : datetime.datetime.strptime(d,'%Y-%m-%dT%H:%M:%S')
 boolean = lambda b : True if b=='true' else False 
