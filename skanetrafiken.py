@@ -52,6 +52,7 @@ import logging
 import string
 import urllib
 import datetime
+import pprint
 
 from xml.dom import minidom
 
@@ -68,7 +69,8 @@ ERROR_EXCEPTION = string.Template('Error: ${status}.')
 
 string = lambda s : unicode(s)
 integer = lambda n : int(n)
-date = lambda d : datetime.datetime.strptime(d,'%Y-%m-%dT%H:%M:%S')
+#date = lambda d : datetime.datetime.strptime(d,'%Y-%m-%dT%H:%M:%S')
+date = lambda d : d
 boolean = lambda b : True if b=='true' else False 
 
 POINT = 'Point', {
@@ -101,6 +103,20 @@ LINE = 'Line', {
 	'RealTime' : REALTIMEINFO
 }
 
+LINES = 'Lines', {
+	'Line' : LINE
+}
+
+TO = 'To', {
+	'Id' : string,
+	'Name' : string
+}
+
+FROM = 'From', {
+	'Id' : string,
+	'Name' : string
+}
+
 TRANSPORTMODE = 'TransportMode', {
 	'Id' : integer,
 	'Name' : string,
@@ -111,6 +127,17 @@ LINETYPE = 'LineType', {
 	'Id' : integer,
 	'Name' : string,
 	'DefaultChecked' : boolean
+}
+
+ROUTELINK = 'RouteLink' , {
+	'RouteLinkKey' : string,
+	'DepDateTime' : date,
+	'DepIsTimingPoint' : boolean,
+	'ArrDateTime' : date,
+	'ArrIsTimingPoint' : boolean,
+	'From' : FROM,
+	'To' : TO,
+	'Line' : LINE
 }
 
 JOURNEY = 'Journey' , {
@@ -126,8 +153,10 @@ JOURNEY = 'Journey' , {
 	'JourneyKey' : string,
 	'FareType' : string,
 	'Distance' : integer,
-	'CO2value' : string
+	'CO2value' : string,
+	'RouteLinks' : ROUTELINK
 }
+
 
 GETJOURNEYPATHRESULT = 'GetJourneyPathResult' , {
 	'Code' : integer,
@@ -174,42 +203,49 @@ SKANETRAFIKEN_METHODS = {
 		'required' : ['inpPointFr'],
 		'optional' : ['inpPointTo'],
 		'returns' : GETSTARTENDPOINTRESULT,
+		'listtypes' : ['StartPoints', 'EndPoints'], 
 		'url_template' : API_URL_TEMPLATE 
 	},
 	'neareststation' : {	
 		'required' : ['x', 'y'],
 		'optional' : ['R'],
 		'returns' : GETNEARESTSTOPAREARESULT,
+		'listtypes' : ['NearestStopAreas'], 	
 		'url_template' : API_URL_TEMPLATE 
 	},
 	'stationresults' : {	
 		'required' : ['selPointFrKey'],
 		'optional' : [],
-		'returns' : LINE,
+		'returns' : GETDEPARTUREARRIVALRESULT,
+		'listtypes' : ['Lines'], 	
 		'url_template' : API_URL_TEMPLATE 
 	},
 	'trafficmeans' : {	
 		'required' : [],
 		'optional' : [],
 		'returns' : GETMEANSOFTRANSPORTRESULT,
+		'listtypes' : ['LineTypes', 'TransportModes'], 
 		'url_template' : API_URL_TEMPLATE 
 	},
 	'resultspage'  : {	
 		'required' : ['cmdaction','selPointFr', 'selPointTo'],
 		'optional' : ['inpTime','inpDate','LastStart', 'FirstStart','NoOf','transportMode'],
 		'returns' : GETJOURNEYRESULT,
+		'listtypes' : ['Journeys', 'RouteLinks'], 	
 		'url_template' : API_URL_TEMPLATE 
 	},	
 	'querypage'  : {	
 			'required' : ['inpPointFr','inpPointTo'],
 			'optional' : [],
 			'returns' : GETSTARTENDPOINTRESULT,
+			'listtypes' : ['StartPoints', 'EndPoints'],  		
 			'url_template' : API_URL_TEMPLATE 
 		},
 	'journeypath'  : {	
 			'required' : ['cf','id'],
 			'optional' : [],
 			'returns' : GETJOURNEYPATHRESULT,
+			'listtypes' : [], 
 			'url_template' : API_URL_TEMPLATE 
 		}	
 }
@@ -242,33 +278,66 @@ class Skanetrafiken(object):
 		for method, _ in SKANETRAFIKEN_METHODS.items():
 			if not hasattr( self, method ):
 				setattr( self, method, SkanetrafikenAccumulator( self, method ))
-		
-		
-		
-	def build_return(self,dom_element, target_element_name, conversions):
+				
+	
+	def get_data(self, element):
+		s = []
+		for node in element.childNodes:
+			if node.nodeType == node.TEXT_NODE:
+				s.append(node.data)
+		return ''.join(s)
 
-		results = list()
-		
-		node_list = dom_element.getElementsByTagName(target_element_name)
-		for node in node_list:
-			data = dict()
-			for key, conversion in conversions.items():
-			
-				if isinstance(conversion, tuple):
-					child_key, child_conversion = conversion
-					data[key] = self.build_return (node, child_key, child_conversion)						
+
+	def build_map(self, target_node, conversions, list_types):
+
+		data = {}
+
+		for key, conversion in conversions.items():
+			key_elements = target_node.getElementsByTagName(key)
+			if (len(key_elements) > 0):
+				key_element = key_elements[0]
+
+				if (isinstance(conversion,tuple)):
+					#We have a complex type
+					complex_key, complex_conversion = conversion
+
+					if (key in list_types):
+						#We have a list of complex type					
+
+						data[key] = list()
+						complex_nodes = key_element.getElementsByTagName(complex_key)	
+						if (complex_nodes.length > 0):
+							for conode in complex_nodes:
+								data[key].append(self.build_map(conode,complex_conversion,list_types))
+					else:
+						#We have one complex type
+
+						data[key] = self.build_map(key_element, complex_conversion,list_types)
 				else:
-					data_element = node.getElementsByTagName(key)
-					if (len(data_element) > 0):
-						element_child = data_element[0].firstChild
-						if (element_child != None):
-							if (element_child.nodeType == node.TEXT_NODE):
-								data[key] = conversion(element_child.data)
-			results.append(data)
-		
-		return results
-	
-	
+					data[key] = conversion(self.get_data(key_element))
+
+		return data
+
+
+	def build_return(self, dom_element, target_element, conversions,list_types):
+
+		result = dict()
+
+		#Get the target element
+		node_list = dom_element.getElementsByTagName (target_element)
+
+		#Return empty if no top element is found
+		if (node_list.length == 0):
+			return result
+
+		#Use first (if more than one is found)
+		target_node = node_list[0]
+
+		#Start building
+		result = self.build_map(target_node, conversions, list_types)
+
+		return result
+
 	
 	def call_method(self, method, *args, **kw):
 		
@@ -277,7 +346,7 @@ class Skanetrafiken(object):
 		if args:
 			names = meta['required'] + meta['optional']				
 			for i in range(len(args)):
-				kw[names[i]] = unicode(args[i]).encode('utf-8')		
+				kw[names[i]] = args[i].encode('utf-8')
 		
 		#check we have all required parameters
 		if (len(set(meta['required']) - set(kw.keys())) > 0):
@@ -288,8 +357,8 @@ class Skanetrafiken(object):
 		response = urllib.urlopen(url)
 		
 	  	element, conversions = meta['returns']
-		response_dom = minidom.parse( response )
-		results = self.build_return(response_dom, element, conversions )
+		response_dom = minidom.parse( response )		
+		results = self.build_return(response_dom, element, conversions, meta['listtypes'] )
 		
 		return results
 		
