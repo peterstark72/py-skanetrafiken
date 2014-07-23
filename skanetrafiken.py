@@ -47,329 +47,222 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-
-import logging
-import string
+from lxml import etree
 import urllib
-import datetime
-import pprint
-
-from xml.dom import minidom
 
 
 #URLs from http://www.labs.skanetrafiken.se/api.asp
-XMLNS = u"http://www.etis.fskab.se/v1.0/ETISws"
+XMLNS = u"{{http://www.etis.fskab.se/v1.0/ETISws}}{}"
 
-API_VERSION = "v2.2"
-API_SERVER = "http://www.labs.skanetrafiken.se"
-
-API_URL_TEMPLATE = string.Template('${server}/' + API_VERSION + '/${method}.asp')
-
-ERROR_EXCEPTION = string.Template('Error: ${status}.')
-
-string = lambda s : unicode(s)
-integer = lambda n : int(n)
-#date = lambda d : datetime.datetime.strptime(d,'%Y-%m-%dT%H:%M:%S')
-date = lambda d : d
-boolean = lambda b : True if b=='true' else False 
-
-POINT = 'Point', {
-	'Id' : string,
-	'Name': string,
-	'Type' : string,
-	'X' : integer,
-	'Y' : integer
-} 
-
-NEARESTSTOPAREA = 'NearestStopArea', {
-	'Id' : string,
-	'Name' : string, 
-	'X' : integer, 
-	'Y' : integer, 
-	'Distance' : integer 
-}
-
-REALTIMEINFO = 'RealTimeInfo' , {
-	'DepTimeDeviation' : integer,
-	'DepDeviationAffect' : string
-}
-
-LINE = 'Line', {
-	'Name' : string,
-	'No' : string,
-	'JourneyDateTime' : date,
-	'LineTypeName' : string,
-	'Towards' : string,
-	'RealTime' : REALTIMEINFO
-}
-
-LINES = 'Lines', {
-	'Line' : LINE
-}
-
-TO = 'To', {
-	'Id' : string,
-	'Name' : string
-}
-
-FROM = 'From', {
-	'Id' : string,
-	'Name' : string
-}
-
-TRANSPORTMODE = 'TransportMode', {
-	'Id' : integer,
-	'Name' : string,
-	'DefaultChecked' : boolean
-}
-
-LINETYPE = 'LineType', {
-	'Id' : integer,
-	'Name' : string,
-	'DefaultChecked' : boolean
-}
-
-ROUTELINK = 'RouteLink' , {
-	'RouteLinkKey' : string,
-	'DepDateTime' : date,
-	'DepIsTimingPoint' : boolean,
-	'ArrDateTime' : date,
-	'ArrIsTimingPoint' : boolean,
-	'From' : FROM,
-	'To' : TO,
-	'Line' : LINE
-}
-
-JOURNEY = 'Journey' , {
-	'SequenceNo' : integer,
-	'DepDateTime' : date,
-	'ArrDateTime' : date,
-	'DepWalkDist' : integer,
-	'ArrWalkDist' : integer,
-	'NoOfChanges' : integer,
-	'Guaranteed' : boolean,
-	'CO2factor' : integer,
-	'NoOfZones' : integer,
-	'JourneyKey' : string,
-	'FareType' : string,
-	'Distance' : integer,
-	'CO2value' : string,
-	'RouteLinks' : ROUTELINK
-}
+API_SERVER_URL = "http://www.labs.skanetrafiken.se/v2.2/{}.asp"
 
 
-GETJOURNEYPATHRESULT = 'GetJourneyPathResult' , {
-	'Code' : integer,
-	'Message' : string,
-	'ResultXML' : string
-}
+def boolean(x):
+    if x == "True":
+        return True
 
-GETJOURNEYRESULT = 'GetJourneyResult', {
-	'Code' : integer,
-	'Message' : string,
-	'JourneyResultKey' : string,
-	'Journeys' : JOURNEY
-}
 
-GETSTARTENDPOINTRESULT = 'GetStartEndPointResult' , {
-	'Code' : integer,
-	'Message' : string,
-	'StartPoints' : POINT,
-	'EndPoints': POINT
-} 
+def stringify(element):
+    '''Concatenates all text in the subelements into one string'''
+    return u"".join([x for x in element.itertext()]).strip()
 
-GETNEARESTSTOPAREARESULT = 'GetNearestStopAreaResult' , {
-	'Code' : integer,
-	'Message' : string,
-	'NearestStopAreas' : NEARESTSTOPAREA
-}
 
-GETDEPARTUREARRIVALRESULT = 'GetDepartureArrivalResult' , {
-	'Code' : integer,
-	'Message' : string,
-	'Lines' : LINE
-}
-
-GETMEANSOFTRANSPORTRESULT = 'GetMeansOfTransportResult' , {
-	'Code' : integer,
-	'Message' : string,
-	'TransportModes' : TRANSPORTMODE,
-	'LineTypes' : LINETYPE
-}
+POINT = 'Point',\
+    {'Id': unicode, 'Name': unicode, 'Type': unicode, 'X': int, 'Y': int}
+NEARESTSTOPAREA = 'NearestStopArea', \
+    {'Id': unicode, 'Name': unicode, 'X': int, 'Y': int, 'Distance': int}
+REALTIMEINFO = 'RealTimeInfo', \
+    {'DepTimeDeviation': int, 'DepDeviationAffect': unicode}
+LINE = 'Line', \
+    {'Name': unicode, 'No': unicode, 'JourneyDateTime': unicode,
+     'LineTypeName': unicode, 'Towards': unicode, 'RealTime': REALTIMEINFO}
+LINES = 'Lines', {'Line': LINE}
+TO = 'To', {'Id': unicode, 'Name': unicode}
+FROM = 'From', {'Id': unicode, 'Name': unicode}
+TRANSPORTMODE = 'TransportMode', \
+    {'Id': int, 'Name': unicode, 'DefaultChecked': boolean}
+LINETYPE = 'LineType', \
+    {'Id': int, 'Name': unicode, 'DefaultChecked': boolean}
+ROUTELINK = 'RouteLink',\
+    {'RouteLinkKey': unicode, 'DepDateTime': unicode,
+     'DepIsTimingPoint': boolean, 'ArrDateTime': unicode,
+     'ArrIsTimingPoint': boolean, 'From': FROM, 'To': TO, 'Line': LINE}
+JOURNEY = 'Journey', \
+    {'SequenceNo': int, 'DepDateTime': unicode, 'ArrDateTime': unicode,
+     'DepWalkDist': int, 'ArrWalkDist': int, 'NoOfChanges': int,
+     'Guaranteed': boolean, 'CO2factor': int, 'NoOfZones': int,
+     'JourneyKey': unicode, 'FareType': unicode, 'Distance': int,
+     'CO2value': unicode, 'RouteLinks': ROUTELINK}
+GETJOURNEYPATHRESULT = 'GetJourneyPathResult',\
+    {'Code': int, 'Message': unicode, 'ResultXML': unicode}
+GETJOURNEYRESULT = 'GetJourneyResult', \
+    {'Code': int, 'Message': unicode, 'JourneyResultKey': unicode,
+     'Journeys': JOURNEY}
+GETSTARTENDPOINTRESULT = 'GetStartEndPointResult',\
+    {'Code': int, 'Message': unicode, 'StartPoints': POINT,
+     'EndPoints': POINT}
+GETNEARESTSTOPAREARESULT = 'GetNearestStopAreaResult', \
+    {'Code': int, 'Message': unicode, 'NearestStopAreas': NEARESTSTOPAREA}
+GETDEPARTUREARRIVALRESULT = 'GetDepartureArrivalResult',\
+    {'Code': int, 'Message': unicode, 'Lines': LINE}
+GETMEANSOFTRANSPORTRESULT = 'GetMeansOfTransportResult', \
+    {'Code': int, 'Message': unicode, 'TransportModes': TRANSPORTMODE,
+     'LineTypes': LINETYPE}
 
 
 SKANETRAFIKEN_METHODS = {
-	'querystation' : {
-		'required' : ['inpPointFr'],
-		'optional' : ['inpPointTo'],
-		'returns' : GETSTARTENDPOINTRESULT,
-		'listtypes' : ['StartPoints', 'EndPoints'], 
-		'url_template' : API_URL_TEMPLATE 
-	},
-	'neareststation' : {	
-		'required' : ['x', 'y'],
-		'optional' : ['R'],
-		'returns' : GETNEARESTSTOPAREARESULT,
-		'listtypes' : ['NearestStopAreas'], 	
-		'url_template' : API_URL_TEMPLATE 
-	},
-	'stationresults' : {	
-		'required' : ['selPointFrKey'],
-		'optional' : [],
-		'returns' : GETDEPARTUREARRIVALRESULT,
-		'listtypes' : ['Lines'], 	
-		'url_template' : API_URL_TEMPLATE 
-	},
-	'trafficmeans' : {	
-		'required' : [],
-		'optional' : [],
-		'returns' : GETMEANSOFTRANSPORTRESULT,
-		'listtypes' : ['LineTypes', 'TransportModes'], 
-		'url_template' : API_URL_TEMPLATE 
-	},
-	'resultspage'  : {	
-		'required' : ['cmdaction','selPointFr', 'selPointTo'],
-		'optional' : ['inpTime','inpDate','LastStart', 'FirstStart','NoOf','transportMode'],
-		'returns' : GETJOURNEYRESULT,
-		'listtypes' : ['Journeys', 'RouteLinks'], 	
-		'url_template' : API_URL_TEMPLATE 
-	},	
-	'querypage'  : {	
-			'required' : ['inpPointFr','inpPointTo'],
-			'optional' : [],
-			'returns' : GETSTARTENDPOINTRESULT,
-			'listtypes' : ['StartPoints', 'EndPoints'],  		
-			'url_template' : API_URL_TEMPLATE 
-		},
-	'journeypath'  : {	
-			'required' : ['cf','id'],
-			'optional' : [],
-			'returns' : GETJOURNEYPATHRESULT,
-			'listtypes' : [], 
-			'url_template' : API_URL_TEMPLATE 
-		}	
+    'querystation': {
+        'required': ['inpPointFr'],
+        'optional': ['inpPointTo'],
+        'returns': GETSTARTENDPOINTRESULT,
+        'listtypes': ['StartPoints', 'EndPoints'],
+        'url_template': API_SERVER_URL
+    },
+    'neareststation': {
+        'required': ['x', 'y'],
+        'optional': ['R'],
+        'returns': GETNEARESTSTOPAREARESULT,
+        'listtypes': ['NearestStopAreas'],
+        'url_template': API_SERVER_URL
+    },
+    'stationresults': {
+        'required': ['selPointFrKey'],
+        'optional': [],
+        'returns': GETDEPARTUREARRIVALRESULT,
+        'listtypes': ['Lines'],
+        'url_template': API_SERVER_URL
+    },
+    'trafficmeans': {
+        'required': [],
+        'optional': [],
+        'returns': GETMEANSOFTRANSPORTRESULT,
+        'listtypes': ['LineTypes', 'TransportModes'],
+        'url_template': API_SERVER_URL
+    },
+    'resultspage': {
+        'required': ['cmdaction', 'selPointFr', 'selPointTo'],
+        'optional': ['inpTime', 'inpDate', 'LastStart',
+                                'FirstStart', 'NoOf', 'transportMode'],
+        'returns': GETJOURNEYRESULT,
+        'listtypes': ['Journeys', 'RouteLinks'],
+        'url_template': API_SERVER_URL
+    },
+    'querypage': {
+        'required': ['inpPointFr', 'inpPointTo'],
+        'optional': [],
+        'returns': GETSTARTENDPOINTRESULT,
+        'listtypes': ['StartPoints', 'EndPoints'],
+        'url_template': API_SERVER_URL
+    },
+    'journeypath': {
+        'required': ['cf', 'id'],
+        'optional': [],
+        'returns': GETJOURNEYPATHRESULT,
+        'listtypes': [],
+        'url_template': API_SERVER_URL
+    }
 }
 
 
-class SkanetrafikenException( Exception ):
+class SkanetrafikenException(Exception):
     pass
 
 
 class SkanetrafikenAccumulator:
-    def __init__( self, skanetrafiken_obj, name ):
+    def __init__(self, skanetrafiken_obj, name):
         self.skanetrafiken_obj = skanetrafiken_obj
-        self.name          = name
-    
-    def __repr__( self ):
-        return self.name
-    
-    def __call__( self, *args, **kw ):
-        return self.skanetrafiken_obj.call_method( self.name, *args, **kw )
+        self.name = name
 
+    def __repr__(self):
+        return self.name
+
+    def __call__(self, *args, **kw):
+        return self.skanetrafiken_obj.call_method(self.name, *args, **kw)
 
 
 class Skanetrafiken(object):
-	'''Looks up times and stops from skanetrafiken.se '''
+    '''Looks up times and stops from skanetrafiken.se '''
 
-	def __init__(self):
-	
-		self.api_server = API_SERVER
-		
-		for method, _ in SKANETRAFIKEN_METHODS.items():
-			if not hasattr( self, method ):
-				setattr( self, method, SkanetrafikenAccumulator( self, method ))
-				
-	
-	def get_data(self, element):
-		s = []
-		for node in element.childNodes:
-			if node.nodeType == node.TEXT_NODE:
-				s.append(node.data)
-		return ''.join(s)
+    def __init__(self):
 
+        for method, _ in SKANETRAFIKEN_METHODS.items():
+            if not hasattr(self, method):
+                setattr(self, method, SkanetrafikenAccumulator(self, method))
 
-	def build_map(self, target_node, conversions, list_types):
+    def build_map(self, target_node, conversions, list_types):
 
-		data = {}
+        data = {}
 
-		for key, conversion in conversions.items():
-			key_elements = target_node.getElementsByTagName(key)
-			if (len(key_elements) > 0):
-				key_element = key_elements[0]
+        for key, conversion in conversions.items():
+            key_element = target_node.find(XMLNS.format(key))
+            if (key_element is not None):
 
-				if (isinstance(conversion,tuple)):
-					#We have a complex type
-					complex_key, complex_conversion = conversion
+                if (isinstance(conversion, tuple)):
+                    #We have a complex type
+                    complex_key, complex_conversion = conversion
 
-					if (key in list_types):
-						#We have a list of complex type					
+                    if (key in list_types):
+                        #We have a list of complex type
 
-						data[key] = list()
-						complex_nodes = key_element.getElementsByTagName(complex_key)	
-						if (complex_nodes.length > 0):
-							for conode in complex_nodes:
-								data[key].append(self.build_map(conode,complex_conversion,list_types))
-					else:
-						#We have one complex type
+                        data[key] = []
+                        complex_nodes = key_element.findall(XMLNS.format(complex_key))
+                        for conode in complex_nodes:
+                            data[key].append(self.build_map(conode, complex_conversion, list_types))
+                    else:
+                        #We have one complex type
 
-						data[key] = self.build_map(key_element, complex_conversion,list_types)
-				else:
-					data[key] = conversion(self.get_data(key_element))
+                        data[key] = self.build_map(key_element, complex_conversion, list_types)
+                else:
+                    data[key] = conversion(stringify(key_element))
 
-		return data
+        return data
 
+    def build_return(self, doc, target_element, conversions, list_types):
 
-	def build_return(self, dom_element, target_element, conversions,list_types):
+        result = {}
 
-		result = dict()
+        #Get the target element
+        e = doc.find(".//"+XMLNS.format(target_element))
 
-		#Get the target element
-		node_list = dom_element.getElementsByTagName (target_element)
+        #Return empty if no top element is found
+        if(e is None):
+            return result
 
-		#Return empty if no top element is found
-		if (node_list.length == 0):
-			return result
+        #Start building
+        result = self.build_map(e, conversions, list_types)
 
-		#Use first (if more than one is found)
-		target_node = node_list[0]
+        return result
 
-		#Start building
-		result = self.build_map(target_node, conversions, list_types)
+    def call_method(self, method, *args, **kw):
 
-		return result
+        meta = SKANETRAFIKEN_METHODS[method]
 
-	
-	def call_method(self, method, *args, **kw):
-		
-		meta = SKANETRAFIKEN_METHODS[method]
-		
-		if args:
-			names = meta['required'] + meta['optional']				
-			for i in range(len(args)):
-				kw[names[i]] = args[i].encode('utf-8')
-		
-		#check we have all required parameters
-		if (len(set(meta['required']) - set(kw.keys())) > 0):
-			raise SkanetrafikenException, ERROR_EXCEPTION.substitute(status = 'missing parameters')				
-		
-		encoded_args = urllib.urlencode(kw)	
-		url = meta['url_template'].substitute(method=method,server=self.api_server ) + "?" + encoded_args		
-		response = urllib.urlopen(url)
-		
-	  	element, conversions = meta['returns']
-		response_dom = minidom.parse( response )		
-		results = self.build_return(response_dom, element, conversions, meta['listtypes'] )
-		
-		return results
-		
+        if args:
+            names = meta['required'] + meta['optional']
+            for i in range(len(args)):
+                kw[names[i]] = unicode(args[i]).encode('utf-8')
 
+        # Check we have all required parameters
+        if (len(set(meta['required']) - set(kw.keys())) > 0):
+            raise SkanetrafikenException('Missing parameters')
 
-def main():
-	pass
+        encoded_args = urllib.urlencode(kw)
+        url = meta['url_template'].format(method)
+        response = urllib.urlopen(url=url, data=encoded_args)
+
+        element, conversions = meta['returns']
+        doc = etree.parse(response)
+
+        results = self.build_return(doc, element, conversions, meta['listtypes'])
+
+        return results
+
 
 if __name__ == '__main__':
-	main()		
-		
+    sk = Skanetrafiken()
+    print sk.querystation(u"Tygelsjö")
+
+
 
 
 
