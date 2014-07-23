@@ -115,51 +115,44 @@ SKANETRAFIKEN_METHODS = {
         'required': ['inpPointFr'],
         'optional': ['inpPointTo'],
         'returns': GETSTARTENDPOINTRESULT,
-        'listtypes': ['StartPoints', 'EndPoints'],
-        'url_template': API_SERVER_URL
+        'listtypes': ['StartPoints', 'EndPoints']
     },
     'neareststation': {
         'required': ['x', 'y'],
         'optional': ['R'],
         'returns': GETNEARESTSTOPAREARESULT,
-        'listtypes': ['NearestStopAreas'],
-        'url_template': API_SERVER_URL
+        'listtypes': ['NearestStopAreas']
     },
     'stationresults': {
         'required': ['selPointFrKey'],
         'optional': [],
         'returns': GETDEPARTUREARRIVALRESULT,
-        'listtypes': ['Lines'],
-        'url_template': API_SERVER_URL
+        'listtypes': ['Lines']
     },
     'trafficmeans': {
         'required': [],
         'optional': [],
         'returns': GETMEANSOFTRANSPORTRESULT,
-        'listtypes': ['LineTypes', 'TransportModes'],
-        'url_template': API_SERVER_URL
+        'listtypes': ['LineTypes', 'TransportModes']
     },
     'resultspage': {
         'required': ['cmdaction', 'selPointFr', 'selPointTo'],
         'optional': ['inpTime', 'inpDate', 'LastStart',
                                 'FirstStart', 'NoOf', 'transportMode'],
         'returns': GETJOURNEYRESULT,
-        'listtypes': ['Journeys', 'RouteLinks'],
-        'url_template': API_SERVER_URL
+        'listtypes': ['Journeys', 'RouteLinks']
     },
     'querypage': {
         'required': ['inpPointFr', 'inpPointTo'],
         'optional': [],
         'returns': GETSTARTENDPOINTRESULT,
-        'listtypes': ['StartPoints', 'EndPoints'],
-        'url_template': API_SERVER_URL
+        'listtypes': ['StartPoints', 'EndPoints']
     },
     'journeypath': {
         'required': ['cf', 'id'],
         'optional': [],
         'returns': GETJOURNEYPATHRESULT,
-        'listtypes': [],
-        'url_template': API_SERVER_URL
+        'listtypes': []
     }
 }
 
@@ -249,7 +242,7 @@ class Skanetrafiken(object):
             raise SkanetrafikenException('Missing parameters')
 
         encoded_args = urllib.urlencode(kw)
-        url = meta['url_template'].format(method)
+        url = API_SERVER_URL.format(method)
         response = urllib.urlopen(url=url, data=encoded_args)
 
         element, conversions = meta['returns']
