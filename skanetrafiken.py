@@ -203,15 +203,17 @@ class Skanetrafiken(object):
 
                     if (key in list_types):
                         #We have a list of complex type
-
                         data[key] = []
-                        complex_nodes = key_element.findall(XMLNS.format(complex_key))
+                        complex_nodes = \
+                            key_element.findall(XMLNS.format(complex_key))
                         for conode in complex_nodes:
-                            data[key].append(self.build_map(conode, complex_conversion, list_types))
+                            data[key].append(self.build_map(conode,
+                                             complex_conversion, list_types))
                     else:
                         #We have one complex type
-
-                        data[key] = self.build_map(key_element, complex_conversion, list_types)
+                        data[key] = self.build_map(key_element,
+                                                   complex_conversion,
+                                                   list_types)
                 else:
                     data[key] = conversion(stringify(key_element))
 
@@ -253,7 +255,10 @@ class Skanetrafiken(object):
         element, conversions = meta['returns']
         doc = etree.parse(response)
 
-        results = self.build_return(doc, element, conversions, meta['listtypes'])
+        results = self.build_return(doc,
+                                    element,
+                                    conversions,
+                                    meta['listtypes'])
 
         return results
 
@@ -261,17 +266,5 @@ class Skanetrafiken(object):
 if __name__ == '__main__':
     sk = Skanetrafiken()
     print sk.querystation(u"Tygelsjö")
-
-
-
-
-
-
-
-
-
-
-
-
 
 
