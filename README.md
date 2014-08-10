@@ -13,8 +13,7 @@ Documentation is here <http://www.labs.skanetrafiken.se/api.asp>
 # Examples
 
 ```python
-import skanetrafiken
-sk = skanetrafiken.Skanetrafiken()
+import skanetrafiken as sk
 sk.querystation(u"Malmö C")
 sk.resultspage("next", u"Malmö C|80000|0", u"landskrona|82000|0")
 ```
