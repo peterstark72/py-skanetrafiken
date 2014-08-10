@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='skanetrafiken',
-      version='1.0',
+      version='2.0',
       py_modules=['skanetrafiken'],
       author='Peter Stark',
       author_email='peterstark72@gmail.com',
