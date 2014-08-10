@@ -3,8 +3,6 @@
 """
 Skanetrafiken API Python module
 av Peter Stark <peterstark72@gmail.com>
-(Inspirerad av Steve Marshalls Fire Eagle API.)
-
 
 Repo på <https://github.com/peterstark72/skanetrafiken>
 
@@ -13,45 +11,18 @@ För API dokumentation, se <http://www.labs.skanetrafiken.se/api.asp>
 Exempel:
 
 >>> import skanetrafiken
->>> sk = skanetrafiken.Skanetrafiken()
 >>> sk.querystation(u"Malmö C")
 >>> sk.resultspage("next", u"Malmö C|80000|0", u"landskrona|82000|0")
 
-
-Copyright (c) 2012, Peter Stark
-All rights reserved.
-
-Unless otherwise specified, redistribution and use of this software in
-source and binary forms, with or without modification, are permitted
-provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * The name of the author nor the names of any contributors may be
-      used to endorse or promote products derived from this software without
-      specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 from lxml import etree
+import logging
 import urllib
 
+__version__ = "2.0"
 
-#URLs from http://www.labs.skanetrafiken.se/api.asp
+# XML namespace
 XMLNS = u"{{http://www.etis.fskab.se/v1.0/ETISws}}{}"
 
 API_SERVER_URL = "http://www.labs.skanetrafiken.se/v2.2/{}.asp"
@@ -67,6 +38,10 @@ def stringify(element):
     return u"".join([x for x in element.itertext()]).strip()
 
 
+class SkanetrafikenException(Exception):
+    pass
+
+POINTTYPE = ("STOP_AREA", "ADDRESS", "POI", "UNKNOWN")
 POINT = 'Point',\
     {'Id': unicode, 'Name': unicode, 'Type': unicode, 'X': int, 'Y': int}
 NEARESTSTOPAREA = 'NearestStopArea', \
@@ -112,152 +87,187 @@ GETMEANSOFTRANSPORTRESULT = 'GetMeansOfTransportResult', \
 
 SKANETRAFIKEN_METHODS = {
     'querystation': {
-        'required': ['inpPointFr'],
-        'optional': ['inpPointTo'],
         'returns': GETSTARTENDPOINTRESULT,
         'listtypes': ['StartPoints', 'EndPoints']
     },
     'neareststation': {
-        'required': ['x', 'y'],
-        'optional': ['R'],
         'returns': GETNEARESTSTOPAREARESULT,
         'listtypes': ['NearestStopAreas']
     },
     'stationresults': {
-        'required': ['selPointFrKey'],
-        'optional': [],
         'returns': GETDEPARTUREARRIVALRESULT,
         'listtypes': ['Lines']
     },
     'trafficmeans': {
-        'required': [],
-        'optional': [],
         'returns': GETMEANSOFTRANSPORTRESULT,
         'listtypes': ['LineTypes', 'TransportModes']
     },
     'resultspage': {
-        'required': ['cmdaction', 'selPointFr', 'selPointTo'],
-        'optional': ['inpTime', 'inpDate', 'LastStart',
-                                'FirstStart', 'NoOf', 'transportMode'],
         'returns': GETJOURNEYRESULT,
         'listtypes': ['Journeys', 'RouteLinks']
     },
     'querypage': {
-        'required': ['inpPointFr', 'inpPointTo'],
-        'optional': [],
         'returns': GETSTARTENDPOINTRESULT,
         'listtypes': ['StartPoints', 'EndPoints']
     },
     'journeypath': {
-        'required': ['cf', 'id'],
-        'optional': [],
         'returns': GETJOURNEYPATHRESULT,
         'listtypes': []
     }
 }
 
 
-class SkanetrafikenException(Exception):
-    pass
+def neareststation(x, y, R):
+    '''
+    X   x coordinate, RT 90 system
+    Y   y coordinate, RT 90 system
+    R   radius in meters
+    '''
+    return call_method('neareststation', **locals())
 
 
-class SkanetrafikenAccumulator:
-    def __init__(self, skanetrafiken_obj, name):
-        self.skanetrafiken_obj = skanetrafiken_obj
-        self.name = name
-
-    def __repr__(self):
-        return self.name
-
-    def __call__(self, *args, **kw):
-        return self.skanetrafiken_obj.call_method(self.name, *args, **kw)
+def trafficmeans():
+    '''Returns current traffic means'''
+    return call_method('trafficmeans', **locals())
 
 
-class Skanetrafiken(object):
-    '''Looks up times and stops from skanetrafiken.se '''
+def querypage(inpPointFr, inpPointTo):
+    '''Search start and end point'''
+    return call_method('querypage', **locals())
 
-    def __init__(self):
 
-        for method, _ in SKANETRAFIKEN_METHODS.items():
-            if not hasattr(self, method):
-                setattr(self, method, SkanetrafikenAccumulator(self, method))
+def querystation(inpPointFr):
+    '''Search stop area'''
+    return call_method('querystation', **locals())
 
-    def build_map(self, target_node, conversions, list_types):
 
-        data = {}
+def resultspage(selPointFr, selPointTo, cmdAction="next",
+                inpTime=None, inpDate=None, transportMode=None,
+                LastStart=None, FirstStart=None):
+    '''
+    inpTime       [Optional] time for journey
+    inpDate       [Optional] journey  date
+    selPointFr    departure point name|id|type
+    selPointTo    destination point name|id|type
+    NoOf          [Optional] No of journeys in result
+    transportMode [Optional] Sum of linetype ids retrieved
+                    from trafficmeans method
+    cmdAction     search/next/previous set of journeys
+    LastStart     [Optional] date&time of last journey in previous results
+                    (used in conjunction with cmdAction = next)
+    FirstStart    [Optional] date&time of first journey in previous results
+                    (used in conjunction with cmdAction = previous)
+    '''
+    return call_method('resultspage', **locals())
 
-        for key, conversion in conversions.items():
-            key_element = target_node.find(XMLNS.format(key))
-            if (key_element is not None):
 
-                if (isinstance(conversion, tuple)):
-                    #We have a complex type
-                    complex_key, complex_conversion = conversion
+def journeypath(cf, id):
+    '''
+    cf     JourneyKey retrieved in response from resultspage method
+    id     SequenceNo of journey retrieved in response from resultspage method
+    '''
+    return call_method('journeypath', **locals())
 
-                    if (key in list_types):
-                        #We have a list of complex type
-                        data[key] = []
-                        complex_nodes = \
-                            key_element.findall(XMLNS.format(complex_key))
-                        for conode in complex_nodes:
-                            data[key].append(self.build_map(conode,
-                                             complex_conversion, list_types))
-                    else:
-                        #We have one complex type
-                        data[key] = self.build_map(key_element,
-                                                   complex_conversion,
-                                                   list_types)
+
+def stationresults(selPointFrKey, inpDate=None,
+                   inpTime=None, selDirection=None):
+    '''
+    selPointFrKey   Stop Area id
+    inpDate         [Optional] date for departure
+    inpTime         [Optional] time for departure
+    selDirection    [Optional] 0 = departures, 1 = arrivals
+    '''
+    return call_method('stationresults', **locals())
+
+
+def build_map(target_node, conversions, list_types):
+
+    data = {}
+
+    for key, conversion in conversions.items():
+        key_element = target_node.find(XMLNS.format(key))
+        if (key_element is not None):
+
+            if (isinstance(conversion, tuple)):
+                #We have a complex type
+                complex_key, complex_conversion = conversion
+
+                if (key in list_types):
+                    #We have a list of complex type
+                    data[key] = []
+                    complex_nodes = \
+                        key_element.findall(XMLNS.format(complex_key))
+                    for conode in complex_nodes:
+                        data[key].append(build_map(conode,
+                                         complex_conversion, list_types))
                 else:
-                    data[key] = conversion(stringify(key_element))
+                    #We have one complex type
+                    data[key] = build_map(key_element, complex_conversion,
+                                          list_types)
+            else:
+                data[key] = conversion(stringify(key_element))
 
-        return data
+    return data
 
-    def build_return(self, doc, target_element, conversions, list_types):
 
-        result = {}
+def build_return(doc, meta):
 
-        #Get the target element
-        e = doc.find(".//"+XMLNS.format(target_element))
+    element, conversions = meta['returns']
 
-        #Return empty if no top element is found
-        if(e is None):
-            return result
+    #Get the target element
+    e = doc.find(".//"+XMLNS.format(element))
 
-        #Start building
-        result = self.build_map(e, conversions, list_types)
+    #Return empty if no top element is found
+    if(e is None):
+        raise SkanetrafikenException("No result")
 
-        return result
+    code = e.find(XMLNS.format("Code"))
+    msg = e.find(XMLNS.format("Message"))
+    if code.text != "0":
+        raise SkanetrafikenException(msg.text)
 
-    def call_method(self, method, *args, **kw):
+    #Start building
+    return build_map(e, conversions, meta['listtypes'])
 
-        meta = SKANETRAFIKEN_METHODS[method]
 
-        if args:
-            names = meta['required'] + meta['optional']
-            for i in range(len(args)):
-                kw[names[i]] = unicode(args[i]).encode('utf-8')
+def call_method(method, **kw):
 
-        # Check we have all required parameters
-        if (len(set(meta['required']) - set(kw.keys())) > 0):
-            raise SkanetrafikenException('Missing parameters')
+    # UTF-8 encode all arguments
+    data = {}
+    for k in [k for k in kw if kw[k] is not None]:
+        data[k] = unicode(kw[k]).encode("utf-8")
+    encoded_args = urllib.urlencode(data)
 
-        encoded_args = urllib.urlencode(kw)
-        url = API_SERVER_URL.format(method)
-        response = urllib.urlopen(url=url, data=encoded_args)
+    # Build URL
+    url = API_SERVER_URL.format(method) + "?" + encoded_args
 
-        element, conversions = meta['returns']
-        doc = etree.parse(response)
+    try:
+        response = urllib.urlopen(url)
+        result = response.read()
+        doc = etree.fromstring(result)
+    except IOError:
+        raise SkanetrafikenException("Could not connect to server")
+    except:
+        raise SkanetrafikenException(result)
+    finally:
+        logging.info("GET: {}".format(url))
 
-        results = self.build_return(doc,
-                                    element,
-                                    conversions,
-                                    meta['listtypes'])
-
-        return results
+    return build_return(doc, SKANETRAFIKEN_METHODS[method])
 
 
 if __name__ == '__main__':
-    sk = Skanetrafiken()
-    print sk.querystation(u"Tygelsjö")
 
+    print querystation(u"Tygelsjö")
+
+'''
+    print querypage(u"Tygelsjö", u"Göteborg")
+    print stationresults(80421)
+
+    try:
+        r = resultspage(u"Malmö|80000|0", u"landskrona|82000|0")
+        cf = r.get("JourneyResultKey")
+        print journeypath(cf, 1)
+    except SkanetrafikenException as e:
+        print e
+'''
 
