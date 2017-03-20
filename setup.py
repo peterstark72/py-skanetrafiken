@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='skanetrafiken',
-      version='2.0.1',
+      version='2.1.0',
       py_modules=['skanetrafiken'],
       author='Peter Stark',
       author_email='peterstark72@gmail.com',
@@ -14,6 +14,6 @@ setup(name='skanetrafiken',
                    'Intended Audience :: Developers',
                    'License :: Free for non-commercial use',
                    'Natural Language :: Swedish',
-                   'Programming Language :: Python :: 2.7',
+                   'Programming Language :: Python :: 3.5',
                    'Topic :: Internet']
       )

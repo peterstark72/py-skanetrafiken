@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- encoding: utf-8 -*-
 
 import skanetrafiken as sk
@@ -12,12 +12,12 @@ class TestSkanetrafikenOpenApi(unittest.TestCase):
         self.assertIsNotNone(r)
 
     def test_querystation(self):
-        r = sk.querystation(u"Tygelsjö")
+        r = sk.querystation("Tygelsjö")
         self.assertIsNotNone(r)
 
     def test_resultspage(self):
-        r = sk.resultspage(selPointFr=u"Malmö C|80000|0",
-                           selPointTo=u"Landskrona|82000|0")
+        r = sk.resultspage(selPointFr="Malmö C|80000|0",
+                           selPointTo="Landskrona|82000|0")
         self.assertIsNotNone(r)
 
     def test_neareststation(self):

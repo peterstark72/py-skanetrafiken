@@ -14,6 +14,6 @@ Documentation is here <http://www.labs.skanetrafiken.se/api.asp>
 
 ```python
 import skanetrafiken as sk
-sk.querystation(u"Malmö C")
-sk.resultspage("next", u"Malmö C|80000|0", u"landskrona|82000|0")
+sk.querystation("Malmö C")
+sk.resultspage("next", u"Malmö C|80000|0", "landskrona|82000|0")
 ```

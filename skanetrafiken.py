@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 """
-Skanetrafiken API Python module
+Skanetrafiken API Python 3 module
 av Peter Stark <peterstark72@gmail.com>
 
 Repo på <https://github.com/peterstark72/skanetrafiken>
@@ -11,16 +11,17 @@ För API dokumentation, se <http://www.labs.skanetrafiken.se/api.asp>
 Exempel:
 
 >>> import skanetrafiken
->>> sk.querystation(u"Malmö C")
->>> sk.resultspage("next", u"Malmö C|80000|0", u"landskrona|82000|0")
+>>> sk.querystation("Malmö C")
+>>> sk.resultspage("next", "Malmö C|80000|0", "landskrona|82000|0")
 
 """
-
+from urllib.parse import urlencode
+from urllib.request import urlopen
 from lxml import etree
 import logging
 import urllib
 
-__version__ = "2.0"
+__version__ = "2.1"
 
 # XML namespace
 XMLNS = u"{{http://www.etis.fskab.se/v1.0/ETISws}}{}"
@@ -43,45 +44,45 @@ class SkanetrafikenException(Exception):
 
 POINTTYPE = ("STOP_AREA", "ADDRESS", "POI", "UNKNOWN")
 POINT = 'Point',\
-    {'Id': unicode, 'Name': unicode, 'Type': unicode, 'X': int, 'Y': int}
+    {'Id': str, 'Name': str, 'Type': str, 'X': int, 'Y': int}
 NEARESTSTOPAREA = 'NearestStopArea', \
-    {'Id': unicode, 'Name': unicode, 'X': int, 'Y': int, 'Distance': int}
+    {'Id': str, 'Name': str, 'X': int, 'Y': int, 'Distance': int}
 REALTIMEINFO = 'RealTimeInfo', \
-    {'DepTimeDeviation': int, 'DepDeviationAffect': unicode}
+    {'DepTimeDeviation': int, 'DepDeviationAffect': str}
 LINE = 'Line', \
-    {'Name': unicode, 'No': unicode, 'JourneyDateTime': unicode,
-     'LineTypeName': unicode, 'Towards': unicode, 'RealTime': REALTIMEINFO}
+    {'Name': str, 'No': str, 'JourneyDateTime': str,
+     'LineTypeName': str, 'Towards': str, 'RealTime': REALTIMEINFO}
 LINES = 'Lines', {'Line': LINE}
-TO = 'To', {'Id': unicode, 'Name': unicode}
-FROM = 'From', {'Id': unicode, 'Name': unicode}
+TO = 'To', {'Id': str, 'Name': str}
+FROM = 'From', {'Id': str, 'Name': str}
 TRANSPORTMODE = 'TransportMode', \
-    {'Id': int, 'Name': unicode, 'DefaultChecked': boolean}
+    {'Id': int, 'Name': str, 'DefaultChecked': boolean}
 LINETYPE = 'LineType', \
-    {'Id': int, 'Name': unicode, 'DefaultChecked': boolean}
+    {'Id': int, 'Name': str, 'DefaultChecked': boolean}
 ROUTELINK = 'RouteLink',\
-    {'RouteLinkKey': unicode, 'DepDateTime': unicode,
-     'DepIsTimingPoint': boolean, 'ArrDateTime': unicode,
+    {'RouteLinkKey': str, 'DepDateTime': str,
+     'DepIsTimingPoint': boolean, 'ArrDateTime': str,
      'ArrIsTimingPoint': boolean, 'From': FROM, 'To': TO, 'Line': LINE}
 JOURNEY = 'Journey', \
-    {'SequenceNo': int, 'DepDateTime': unicode, 'ArrDateTime': unicode,
+    {'SequenceNo': int, 'DepDateTime': str, 'ArrDateTime': str,
      'DepWalkDist': int, 'ArrWalkDist': int, 'NoOfChanges': int,
      'Guaranteed': boolean, 'CO2factor': int, 'NoOfZones': int,
-     'JourneyKey': unicode, 'FareType': unicode, 'Distance': int,
-     'CO2value': unicode, 'RouteLinks': ROUTELINK}
+     'JourneyKey': str, 'FareType': str, 'Distance': int,
+     'CO2value': str, 'RouteLinks': ROUTELINK}
 GETJOURNEYPATHRESULT = 'GetJourneyPathResult',\
-    {'Code': int, 'Message': unicode, 'ResultXML': unicode}
+    {'Code': int, 'Message': str, 'ResultXML': str}
 GETJOURNEYRESULT = 'GetJourneyResult', \
-    {'Code': int, 'Message': unicode, 'JourneyResultKey': unicode,
+    {'Code': int, 'Message': str, 'JourneyResultKey': str,
      'Journeys': JOURNEY}
 GETSTARTENDPOINTRESULT = 'GetStartEndPointResult',\
-    {'Code': int, 'Message': unicode, 'StartPoints': POINT,
+    {'Code': int, 'Message': str, 'StartPoints': POINT,
      'EndPoints': POINT}
 GETNEARESTSTOPAREARESULT = 'GetNearestStopAreaResult', \
-    {'Code': int, 'Message': unicode, 'NearestStopAreas': NEARESTSTOPAREA}
+    {'Code': int, 'Message': str, 'NearestStopAreas': NEARESTSTOPAREA}
 GETDEPARTUREARRIVALRESULT = 'GetDepartureArrivalResult',\
-    {'Code': int, 'Message': unicode, 'Lines': LINE}
+    {'Code': int, 'Message': str, 'Lines': LINE}
 GETMEANSOFTRANSPORTRESULT = 'GetMeansOfTransportResult', \
-    {'Code': int, 'Message': unicode, 'TransportModes': TRANSPORTMODE,
+    {'Code': int, 'Message': str, 'TransportModes': TRANSPORTMODE,
      'LineTypes': LINETYPE}
 
 
@@ -235,20 +236,18 @@ def call_method(method, **kw):
     # UTF-8 encode all arguments
     data = {}
     for k in [k for k in kw if kw[k] is not None]:
-        data[k] = unicode(kw[k]).encode("utf-8")
-    encoded_args = urllib.urlencode(data)
+        data[k] = str(kw[k]).encode("utf-8")
+    encoded_args = urlencode(data)
 
     # Build URL
     url = API_SERVER_URL.format(method) + "?" + encoded_args
 
     try:
-        response = urllib.urlopen(url)
+        response = urlopen(url)
         result = response.read()
         doc = etree.fromstring(result)
-    except IOError:
-        raise SkanetrafikenException("Could not connect to server")
     except:
-        raise SkanetrafikenException(result)
+        raise SkanetrafikenException("Could not connect to server")
     finally:
         logging.info("GET: {}".format(url))
 
@@ -257,7 +256,7 @@ def call_method(method, **kw):
 
 if __name__ == '__main__':
 
-    print querystation(u"Tygelsjö")
+    print(querystation("Tygelsjö"))
 
 '''
     print querypage(u"Tygelsjö", u"Göteborg")
