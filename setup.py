@@ -1,9 +1,7 @@
-#!/usr/bin/env python
-
 from distutils.core import setup
 
 setup(name='skanetrafiken',
-      version='2.1.0',
+      version='2.1.1',
       py_modules=['skanetrafiken'],
       author='Peter Stark',
       author_email='peterstark72@gmail.com',

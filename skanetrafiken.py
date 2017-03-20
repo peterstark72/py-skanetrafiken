@@ -12,7 +12,7 @@ Exempel:
 
 >>> import skanetrafiken
 >>> sk.querystation("Malmö C")
->>> sk.resultspage("next", "Malmö C|80000|0", "landskrona|82000|0")
+>>> sk.resultspage("Malmö C|80000|0", "landskrona|82000|0", "next")
 
 """
 from urllib.parse import urlencode
@@ -21,10 +21,10 @@ from lxml import etree
 import logging
 import urllib
 
-__version__ = "2.1"
+__version__ = "2.1.1"
 
 # XML namespace
-XMLNS = u"{{http://www.etis.fskab.se/v1.0/ETISws}}{}"
+XMLNS = "{{http://www.etis.fskab.se/v1.0/ETISws}}{}"
 
 API_SERVER_URL = "http://www.labs.skanetrafiken.se/v2.2/{}.asp"
 
@@ -190,11 +190,11 @@ def build_map(target_node, conversions, list_types):
         if (key_element is not None):
 
             if (isinstance(conversion, tuple)):
-                #We have a complex type
+                #  We have a complex type
                 complex_key, complex_conversion = conversion
 
                 if (key in list_types):
-                    #We have a list of complex type
+                    #  We have a list of complex type
                     data[key] = []
                     complex_nodes = \
                         key_element.findall(XMLNS.format(complex_key))
@@ -202,7 +202,7 @@ def build_map(target_node, conversions, list_types):
                         data[key].append(build_map(conode,
                                          complex_conversion, list_types))
                 else:
-                    #We have one complex type
+                    #  We have one complex type
                     data[key] = build_map(key_element, complex_conversion,
                                           list_types)
             else:
@@ -215,10 +215,10 @@ def build_return(doc, meta):
 
     element, conversions = meta['returns']
 
-    #Get the target element
+    #  Get the target element
     e = doc.find(".//"+XMLNS.format(element))
 
-    #Return empty if no top element is found
+    #  Return empty if no top element is found
     if(e is None):
         raise SkanetrafikenException("No result")
 
@@ -227,20 +227,21 @@ def build_return(doc, meta):
     if code.text != "0":
         raise SkanetrafikenException(msg.text)
 
-    #Start building
+    #  Start building
     return build_map(e, conversions, meta['listtypes'])
 
 
 def call_method(method, **kw):
 
-    # UTF-8 encode all arguments
     data = {}
     for k in [k for k in kw if kw[k] is not None]:
-        data[k] = str(kw[k]).encode("utf-8")
+        data[k] = kw[k]
     encoded_args = urlencode(data)
 
     # Build URL
     url = API_SERVER_URL.format(method) + "?" + encoded_args
+
+    print(url)
 
     try:
         response = urlopen(url)
@@ -258,15 +259,13 @@ if __name__ == '__main__':
 
     print(querystation("Tygelsjö"))
 
-'''
-    print querypage(u"Tygelsjö", u"Göteborg")
-    print stationresults(80421)
+    print(querypage("Tygelsjö", "Göteborg"))
+    print(stationresults(80421))
 
     try:
-        r = resultspage(u"Malmö|80000|0", u"landskrona|82000|0")
+        r = resultspage("Malmö C|80000|0", "landskrona|82000|0")
         cf = r.get("JourneyResultKey")
-        print journeypath(cf, 1)
+        print(journeypath(cf, 1))
     except SkanetrafikenException as e:
-        print e
-'''
+        print(e)
 
