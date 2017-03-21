@@ -21,7 +21,7 @@ from lxml import etree
 import logging
 import urllib
 
-__version__ = "2.1.1"
+__version__ = "2.1.2"
 
 # XML namespace
 XMLNS = "{{http://www.etis.fskab.se/v1.0/ETISws}}{}"
@@ -144,7 +144,7 @@ def querystation(inpPointFr):
 
 def resultspage(selPointFr, selPointTo, cmdAction="next",
                 inpTime=None, inpDate=None, transportMode=None,
-                LastStart=None, FirstStart=None):
+                LastStart=None, FirstStart=None, NoOf=None):
     '''
     inpTime       [Optional] time for journey
     inpDate       [Optional] journey  date
@@ -240,8 +240,6 @@ def call_method(method, **kw):
 
     # Build URL
     url = API_SERVER_URL.format(method) + "?" + encoded_args
-
-    print(url)
 
     try:
         response = urlopen(url)

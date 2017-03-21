@@ -17,7 +17,8 @@ class TestSkanetrafikenOpenApi(unittest.TestCase):
 
     def test_resultspage(self):
         r = sk.resultspage(selPointFr="Malmö C|80000|0",
-                           selPointTo="Landskrona|82000|0")
+                           selPointTo="Landskrona|82000|0",
+                           NoOf=2)
         self.assertIsNotNone(r)
 
     def test_neareststation(self):
