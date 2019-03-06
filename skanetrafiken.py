@@ -48,10 +48,13 @@ POINT = 'Point',\
 NEARESTSTOPAREA = 'NearestStopArea', \
     {'Id': str, 'Name': str, 'X': int, 'Y': int, 'Distance': int}
 REALTIMEINFO = 'RealTimeInfo', \
-    {'DepTimeDeviation': int, 'DepDeviationAffect': str}
+    {'DepTimeDeviation': int, 'DepDeviationAffect': str,
+     'ArrTimeDeviation': int, 'ArrDeviationAffect': str}
+REALTIME = 'RealTime', \
+    {'RealTimeInfo': REALTIMEINFO}
 LINE = 'Line', \
     {'Name': str, 'No': str, 'JourneyDateTime': str,
-     'LineTypeName': str, 'Towards': str, 'RealTime': REALTIMEINFO}
+     'LineTypeName': str, 'Towards': str}
 LINES = 'Lines', {'Line': LINE}
 TO = 'To', {'Id': str, 'Name': str}
 FROM = 'From', {'Id': str, 'Name': str}
@@ -62,7 +65,7 @@ LINETYPE = 'LineType', \
 ROUTELINK = 'RouteLink',\
     {'RouteLinkKey': str, 'DepDateTime': str,
      'DepIsTimingPoint': boolean, 'ArrDateTime': str,
-     'ArrIsTimingPoint': boolean, 'From': FROM, 'To': TO, 'Line': LINE}
+     'ArrIsTimingPoint': boolean, 'RealTime': REALTIME, 'From': FROM, 'To': TO, 'Line': LINE}
 JOURNEY = 'Journey', \
     {'SequenceNo': int, 'DepDateTime': str, 'ArrDateTime': str,
      'DepWalkDist': int, 'ArrWalkDist': int, 'NoOfChanges': int,
