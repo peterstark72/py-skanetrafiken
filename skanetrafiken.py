@@ -21,7 +21,7 @@ from lxml import etree
 import logging
 import urllib
 
-__version__ = "2.1.2"
+__version__ = "2.2.0"
 
 # XML namespace
 XMLNS = "{{http://www.etis.fskab.se/v1.0/ETISws}}{}"

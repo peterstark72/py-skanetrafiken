@@ -1,12 +1,13 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(name='skanetrafiken',
-      version='2.1.2',
+      version='2.2.0',
       py_modules=['skanetrafiken'],
       author='Peter Stark',
       author_email='peterstark72@gmail.com',
       url='https://github.com/peterstark72/skanetrafiken',
       install_requires=['lxml'],
+      setup_requires=['wheel'],
       description="Python wrapper for Skanetrafiken Open API",
       classifiers=['Development Status :: 4 - Beta',
                    'Intended Audience :: Developers',
