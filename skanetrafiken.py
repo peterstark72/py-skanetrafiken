@@ -4,7 +4,7 @@
 Skanetrafiken API Python 3 module
 av Peter Stark <peterstark72@gmail.com>
 
-Repo på <https://github.com/peterstark72/skanetrafiken>
+Repo på <https://github.com/peterstark72/py-skanetrafiken>
 
 För API dokumentation, se <http://www.labs.skanetrafiken.se/api.asp>
 
